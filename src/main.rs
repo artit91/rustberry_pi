@@ -6,8 +6,6 @@
 #![feature(alloc_error_handler)]
 #![feature(global_asm)]
 #![feature(asm)]
-#![feature(fnbox)]
-#![feature(vecdeque_rotate)]
 
 global_asm!(include_str!("boot/start.S"));
 
