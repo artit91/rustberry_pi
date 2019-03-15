@@ -151,7 +151,7 @@ __start:
     // return from the exception
     eret
 
-    //reset bss and enable interrupts
+    //reset bss and jump to main
 1:  adr x0, __bss_start
     adr x1, __bss_end
     // store zero on the address of x0:x0+16 and increment x0
