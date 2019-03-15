@@ -154,7 +154,7 @@ __start:
     //reset bss and enable interrupts
 1:  adr x0, __bss_start
     adr x1, __bss_end
-    // store zero on the address of x0 and x0 + 1
+    // store zero on the address of x0:x0+16 and increment x0
 2:  stp xzr, xzr, [x0], #16
     // compare x0 with the end address
     cmp x0, x1
