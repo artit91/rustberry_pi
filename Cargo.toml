@@ -1,0 +1,11 @@
+[package]
+name = "kernel8"
+version = "0.1.0"
+authors = ["Attila Varga <attila@artit.io>"]
+edition = "2018"
+
+[dependencies]
+tock-registers = "0.3.0"
+
+[package.metadata.cargo-xbuild]
+sysroot_path = "sysroot"
