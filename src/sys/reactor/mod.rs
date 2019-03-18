@@ -50,7 +50,7 @@ impl Loop {
         });
     }
     pub fn run(&mut self) {
-        let character = unsafe { crate::MINIUART.try_read_char() };
+        let character = global![mini_uart].try_read_char();
         let called: Vec<_> = self.req
             .as_ref()
             .unwrap()

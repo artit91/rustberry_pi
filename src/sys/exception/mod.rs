@@ -163,8 +163,8 @@ unsafe extern "C" fn current_elx_synchronous(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(_c: &mut Context) {
-    crate::MINIUART.interrupt_disable();
-    crate::MINIUART.io();
+    global![mini_uart].interrupt_disable();
+    global![mini_uart].io();
 }
 
 #[no_mangle]

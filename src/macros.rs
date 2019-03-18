@@ -31,25 +31,34 @@ macro_rules! println {
     })
 }
 
+#[macro_export]
+macro_rules! global {
+    [$name:ident] => ($crate::globals::$name());
+}
+
+#[macro_export]
+macro_rules! register_global {
+    ($name:ident, $type:path, $variable_name:ident) => (
+        #[inline]
+        pub fn $name() -> &'static mut $type {
+            return unsafe { &mut $crate::globals::$variable_name };
+        }
+    );
+}
+
 #[doc(hidden)]
 pub fn _read_sync() -> char {
-    unsafe {
-        crate::MINIUART.read_char()
-    }
+    global![mini_uart].read_char()
 }
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
     use core::fmt::Write;
-    unsafe {
-        crate::LOGGER.write_fmt(args).unwrap();
-    }
+    global![logger].write_fmt(args).unwrap();
 }
 
 #[doc(hidden)]
 pub fn _print_sync(args: fmt::Arguments) {
     use core::fmt::Write;
-    unsafe {
-        crate::MINIUART.write_fmt(args).unwrap();
-    }
+    global![mini_uart].write_fmt(args).unwrap();
 }

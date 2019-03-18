@@ -16,21 +16,16 @@ mod asm;
 mod dev;
 mod sys;
 mod logger;
+mod globals;
 
 use alloc::prelude::*;
 use core::panic::PanicInfo;
 use sys::alloc::*;
-use sys::reactor::*;
-use dev::miniuart::*;
-use logger::*;
 
 extern crate alloc;
 
 #[global_allocator]
 static mut ALLOCATOR: Allocator = Allocator::new();
-static mut MINIUART: MiniUart = MiniUart::new();
-static mut LOGGER: Logger = Logger {};
-static mut LOOP: sys::reactor::Loop = Loop::new();
 
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
@@ -41,8 +36,8 @@ fn panic(info: &PanicInfo) -> ! {
     }
 }
 
-unsafe fn echo() {
-    LOOP.read_char(Box::new(|c| {
+fn echo() {
+    global![default_loop].read_char(Box::new(|c| {
         if c != '\n' {
             print!("{}", c);
         }
@@ -50,8 +45,8 @@ unsafe fn echo() {
     }));
 }
 
-unsafe fn command_line() {
-    LOOP.read_line(Box::new(|line| {
+fn command_line() {
+    global![default_loop].read_line(Box::new(|line| {
         // echo back, for now
         print!("\n{}\n> ", line);
         command_line();
@@ -59,10 +54,8 @@ unsafe fn command_line() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn _main() -> ! {
-    ALLOCATOR.init();
-    MINIUART.init();
-    LOOP.init();
+extern "C" fn _main() -> ! {
+    globals::init();
 
     println_sync!("Press a key to continue!");
     read_char_sync!();
@@ -75,9 +68,9 @@ unsafe extern "C" fn _main() -> ! {
 
     loop {
         // check if we have to do something
-        LOOP.run();
+        global![default_loop].run();
         // sleep
-        MINIUART.interrupt_enable();
+        global![mini_uart].interrupt_enable();
         asm::wfi();
     }
 }

@@ -4,7 +4,7 @@ pub struct Logger {}
 
 impl Write for Logger {
     fn write_char(&mut self, c: char) -> core::fmt::Result {
-        unsafe { crate::MINIUART.push_char(c); }
+        global![mini_uart].push_char(c);
         Ok(())
     }
     fn write_str(&mut self, input: &str) -> core::fmt::Result {
