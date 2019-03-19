@@ -38,7 +38,7 @@ impl MiniUart {
                 AUX_MU_LCR_REG::DATA_SIZE::EightBit
             );
 
-            // Disable all interrupts
+            // Disable interrupts
             (*self.aux).AUX_MU_IER_REG.write(
                 AUX_MU_IER_REG::INTERRUPT_ENABLE::CLEAR +
                 AUX_MU_IER_REG::INTERRUPT_EMPTY::CLEAR +
@@ -110,7 +110,7 @@ impl MiniUart {
                 AUX_MU_CNTL_REG::TRANSMIT::SET
             );
 
-            // enable AUX interrupts
+            // enable aux interrupt
             (*(0x3F00_B210 as *mut u32)) = 1 << 29;
         }
     }
@@ -127,41 +127,27 @@ impl MiniUart {
     #[inline]
     pub fn interrupt_enable(&mut self) {
         unsafe {
-            let empty = if self.output.is_some() && !self.output.as_ref().unwrap().is_empty()  {
-                AUX_MU_IER_REG::INTERRUPT_EMPTY::SET
-            } else {
-                AUX_MU_IER_REG::INTERRUPT_EMPTY::CLEAR
-            };
             (*self.aux).AUX_MU_IER_REG.write(
                 AUX_MU_IER_REG::INTERRUPT_ENABLE::SET +
-                empty +
+                AUX_MU_IER_REG::INTERRUPT_EMPTY::CLEAR +
                 AUX_MU_IER_REG::INTERRUPT_HAS_BYTE::SET
             );
         }
     }
     #[inline]
-    pub fn io(&mut self) {
-        if self.output.is_none() {
-            self.output = Some(VecDeque::with_capacity(8));
-        }
+    pub fn try_read_char(&mut self) {
         if self.input.is_none() {
-            self.input = Some(VecDeque::with_capacity(8));
+            self.input = Some(VecDeque::with_capacity(255));
         }
-        let output_queue = self.output.as_mut().unwrap();
         let input_queue = self.input.as_mut().unwrap();
         unsafe {
-            if (*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
-                if let Some(c) = output_queue.pop_front() {
-                    (*self.aux).AUX_MU_IO_REG.set(u32::from(c));
-                }
-            }
             if (*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::DATA_READY) {
                 let c = (*self.aux).AUX_MU_IO_REG.get() as u8;
                 input_queue.push_back(c);
             }
         }
     }
-    pub fn try_read_char(&mut self) -> Option<char> {
+    pub fn try_get_char(&mut self) -> Option<char> {
         if let Some(c) = self.input.as_mut()?.pop_front() {
             return Some(c as char)
         }
@@ -169,7 +155,7 @@ impl MiniUart {
     }
     pub fn push_char(&mut self, c: char) {
         if self.output.is_none() {
-            self.output = Some(VecDeque::with_capacity(8));
+            self.output = Some(VecDeque::with_capacity(255));
         }
         let output_queue = self.output.as_mut().unwrap();
         output_queue.push_back(c as u8);
@@ -177,7 +163,9 @@ impl MiniUart {
     pub fn read_char(&self) -> char {
         unsafe {
             // check if we can read
-            while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::DATA_READY) {}
+            while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::DATA_READY) {
+                asm::nop();
+            }
             // we can
             let mut ret = (*self.aux).AUX_MU_IO_REG.get() as u8 as char;
             if ret == '\r' {
@@ -186,13 +174,30 @@ impl MiniUart {
             ret
         }
     }
+    pub fn flush(&mut self) {
+        if self.output.is_none() {
+            return;
+        }
+        let output_queue =  self.output.as_mut().unwrap();
+        while !output_queue.is_empty() {
+            let c = output_queue.pop_front().unwrap();
+            unsafe {
+                while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
+                    asm::nop();
+                }
+                (*self.aux).AUX_MU_IO_REG.set(c as u32);
+            }
+        }
+    }
 }
 
 impl Write for MiniUart {
     fn write_char(&mut self, c: char) -> core::fmt::Result {
         unsafe {
             // check if we can write
-            while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {}
+            while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
+                asm::nop();
+            }
             // we can
             (*self.aux).AUX_MU_IO_REG.set(c as u32);
         }

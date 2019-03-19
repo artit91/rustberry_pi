@@ -53,9 +53,34 @@ fn command_line() {
     }));
 }
 
+extern "C" fn _loop() -> ! {
+    loop {
+        // clear interrupt link
+        global![interrupt].unlink();
+        // process interrupts
+        global![interrupt].process();
+        // enable interrupts
+        global![interrupt].interrupt_enable();
+        // check if we have to do something
+        global![default_loop].run();
+        // for _i in 0..0xFFFFFF {
+        //     asm::nop();
+        // }
+        // set interrupt link
+        global![interrupt].link(_loop as *const u8 as u64);
+        // flush
+        global![interrupt].flush();
+        // sleep
+        asm::wfi();
+    }
+}
+
 #[no_mangle]
 extern "C" fn _main() -> ! {
     globals::init();
+
+    echo();
+    command_line();
 
     println_sync!("Press a key to continue!");
     read_char_sync!();
@@ -63,14 +88,5 @@ extern "C" fn _main() -> ! {
     println!("Welcome!");
     print!("> ");
 
-    echo();
-    command_line();
-
-    loop {
-        // check if we have to do something
-        global![default_loop].run();
-        // sleep
-        global![mini_uart].interrupt_enable();
-        asm::wfi();
-    }
+    _loop();
 }

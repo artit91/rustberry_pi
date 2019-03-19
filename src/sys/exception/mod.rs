@@ -1,3 +1,5 @@
+pub mod interrupt;
+
 use crate::asm;
 
 use tock_registers::{registers::*, register_bitfields};
@@ -162,9 +164,11 @@ unsafe extern "C" fn current_elx_synchronous(c: &mut Context) {
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(_c: &mut Context) {
+unsafe extern "C" fn current_elx_irq(c: &mut Context) {
     global![mini_uart].interrupt_disable();
-    global![mini_uart].io();
+    if let Some(address) = global![interrupt].link_address() {
+        c.elr_el1 = address;
+    }
 }
 
 #[no_mangle]
