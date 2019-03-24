@@ -51,7 +51,7 @@ impl Loop {
     }
     pub fn run(&mut self) {
         let character = global![mini_uart].try_get_char();
-        let called: Vec<_> = self.req
+        let called: Vec<u64> = self.req
             .as_ref()
             .unwrap()
             .iter()
@@ -86,6 +86,9 @@ impl Loop {
             .collect();
         for id in called {
             self.req.as_mut().unwrap().remove(&id);
+        }
+        if global![mini_uart].character_available() {
+            self.run();
         }
     }
 }

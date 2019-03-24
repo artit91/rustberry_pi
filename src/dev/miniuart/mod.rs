@@ -125,7 +125,7 @@ impl MiniUart {
         }
     }
     #[inline]
-    pub fn interrupt_enable(&mut self) {
+    pub fn interrupt_enable(&self) {
         unsafe {
             (*self.aux).AUX_MU_IER_REG.write(
                 AUX_MU_IER_REG::INTERRUPT_ENABLE::SET +
@@ -174,18 +174,22 @@ impl MiniUart {
             ret
         }
     }
+    pub fn character_available(&self) -> bool {
+        return self.input.is_some() && !self.input.as_ref().unwrap().is_empty();
+    }
     pub fn flush(&mut self) {
         if self.output.is_none() {
             return;
         }
-        let output_queue =  self.output.as_mut().unwrap();
-        while !output_queue.is_empty() {
-            let c = output_queue.pop_front().unwrap();
+        while !self.output.as_mut().unwrap().is_empty() {
             unsafe {
                 while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
                     asm::nop();
                 }
+                self.interrupt_disable();
+                let c = self.output.as_mut().unwrap().pop_front().unwrap();
                 (*self.aux).AUX_MU_IO_REG.set(c as u32);
+                self.interrupt_enable();
             }
         }
     }

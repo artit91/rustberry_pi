@@ -165,9 +165,10 @@ unsafe extern "C" fn current_elx_synchronous(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_irq(c: &mut Context) {
-    global![mini_uart].interrupt_disable();
+    global![interrupt].process();
     if let Some(address) = global![interrupt].link_address() {
         c.elr_el1 = address;
+        global![interrupt].unlink();
     }
 }
 
