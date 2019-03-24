@@ -186,10 +186,10 @@ impl MiniUart {
                 while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
                     asm::nop();
                 }
-                self.interrupt_disable();
+                global![interrupt].interrupt_disable();
                 let c = self.output.as_mut().unwrap().pop_front().unwrap();
                 (*self.aux).AUX_MU_IO_REG.set(c as u32);
-                self.interrupt_enable();
+                global![interrupt].interrupt_enable();
             }
         }
     }
