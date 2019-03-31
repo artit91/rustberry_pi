@@ -1,8 +1,12 @@
 use core::fmt;
 
 #[macro_export]
-macro_rules! read_char_sync {
-    () => ($crate::macros::_read_sync());
+macro_rules! critical_section {
+    {$($token:tt)*} => {{
+        global![interrupt].interrupt_disable();
+        $($token)*;
+        global![interrupt].interrupt_enable();
+    }};
 }
 
 #[macro_export]
@@ -44,11 +48,6 @@ macro_rules! register_global {
             return unsafe { &mut $crate::globals::$variable_name };
         }
     );
-}
-
-#[doc(hidden)]
-pub fn _read_sync() -> char {
-    global![mini_uart].read_char()
 }
 
 #[doc(hidden)]

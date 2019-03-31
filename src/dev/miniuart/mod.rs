@@ -147,6 +147,19 @@ impl MiniUart {
             }
         }
     }
+    #[inline]
+    pub fn try_write_char(&mut self) {
+        self.interrupt_disable();
+        unsafe {
+            if (*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
+                critical_section! {
+                    let c = self.output.as_mut().unwrap().pop_front().unwrap();
+                    (*self.aux).AUX_MU_IO_REG.set(u32::from(c));
+                };
+            }
+        }
+        self.interrupt_enable();
+    }
     pub fn try_get_char(&mut self) -> Option<char> {
         if let Some(c) = self.input.as_mut()?.pop_front() {
             return Some(c as char)
@@ -160,43 +173,17 @@ impl MiniUart {
         let output_queue = self.output.as_mut().unwrap();
         output_queue.push_back(c as u8);
     }
-    pub fn read_char(&self) -> char {
-        unsafe {
-            // check if we can read
-            while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::DATA_READY) {
-                asm::nop();
-            }
-            // we can
-            let mut ret = (*self.aux).AUX_MU_IO_REG.get() as u8 as char;
-            if ret == '\r' {
-                ret = '\n';
-            }
-            ret
-        }
-    }
     pub fn character_available(&self) -> bool {
-        return self.input.is_some() && !self.input.as_ref().unwrap().is_empty();
+        self.input.is_some() && !self.input.as_ref().unwrap().is_empty()
     }
-    pub fn flush(&mut self) {
-        if self.output.is_none() {
-            return;
-        }
-        while !self.output.as_mut().unwrap().is_empty() {
-            unsafe {
-                while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
-                    asm::nop();
-                }
-                global![interrupt].interrupt_disable();
-                let c = self.output.as_mut().unwrap().pop_front().unwrap();
-                (*self.aux).AUX_MU_IO_REG.set(c as u32);
-                global![interrupt].interrupt_enable();
-            }
-        }
+    pub fn output_empty(&mut self) -> bool {
+        self.output.is_none() || self.output.as_mut().unwrap().is_empty()
     }
 }
 
 impl Write for MiniUart {
     fn write_char(&mut self, c: char) -> core::fmt::Result {
+        self.interrupt_disable();
         unsafe {
             // check if we can write
             while !(*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
@@ -205,6 +192,7 @@ impl Write for MiniUart {
             // we can
             (*self.aux).AUX_MU_IO_REG.set(c as u32);
         }
+        self.interrupt_enable();
         Ok(())
     }
     fn write_str(&mut self, input: &str) -> core::fmt::Result {

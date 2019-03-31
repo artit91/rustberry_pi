@@ -91,4 +91,9 @@ impl Loop {
             self.run();
         }
     }
+    pub fn flush(&self) {
+        while !global![mini_uart].output_empty() {
+            global![mini_uart].try_write_char();
+        }
+    }
 }

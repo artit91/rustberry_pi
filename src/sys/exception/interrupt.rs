@@ -34,8 +34,4 @@ impl Interrupt {
     pub fn process(&self) {
         global![mini_uart].try_read_char();
     }
-    #[inline]
-    pub fn flush(&self) {
-        global![mini_uart].flush();
-    }
 }

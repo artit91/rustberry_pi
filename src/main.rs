@@ -60,7 +60,7 @@ extern "C" fn _loop() -> ! {
         // set interrupt link
         global![interrupt].link(_loop as *const u8 as u64);
         // flush
-        global![interrupt].flush();
+        global![default_loop].flush();
         asm::wfi();
     }
 }
@@ -73,9 +73,6 @@ extern "C" fn _main() -> ! {
 
     echo();
     command_line();
-
-    println_sync!("Press a key to continue!");
-    read_char_sync!();
 
     println!("Welcome!");
     print!("> ");
