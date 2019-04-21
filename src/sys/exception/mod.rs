@@ -125,7 +125,7 @@ impl core::fmt::Display for Context {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_sp0_synchronous(c: &mut Context) {
-    println_sync!("current_elx_sp0_synchronous\n{}", c);
+    println!("current_elx_sp0_synchronous\n{}", c);
     loop {
         asm::wfe();
     }
@@ -133,7 +133,7 @@ unsafe extern "C" fn current_elx_sp0_synchronous(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_sp0_irq(c: &mut Context) {
-    println_sync!("current_elx_sp0_irq\n{}", c);
+    println!("current_elx_sp0_irq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -141,7 +141,7 @@ unsafe extern "C" fn current_elx_sp0_irq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_sp0_fiq(c: &mut Context) {
-    println_sync!("current_elx_sp0_fiq\n{}", c);
+    println!("current_elx_sp0_fiq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -149,7 +149,7 @@ unsafe extern "C" fn current_elx_sp0_fiq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_sp0_serror(c: &mut Context) {
-    println_sync!("current_elx_sp0_serror\n{}", c);
+    println!("current_elx_sp0_serror\n{}", c);
     loop {
         asm::wfe();
     }
@@ -157,24 +157,20 @@ unsafe extern "C" fn current_elx_sp0_serror(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_synchronous(c: &mut Context) {
-    println_sync!("current_elx_synchronous\n{}", c);
+    println!("current_elx_synchronous\n{}", c);
     loop {
         asm::wfe();
     }
 }
 
 #[no_mangle]
-unsafe extern "C" fn current_elx_irq(c: &mut Context) {
+unsafe extern "C" fn current_elx_irq(_c: &mut Context) {
     global![interrupt].process();
-    if let Some(address) = global![interrupt].link_address() {
-        c.elr_el1 = address;
-        global![interrupt].unlink();
-    }
 }
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_fiq(c: &mut Context) {
-    println_sync!("current_elx_fiq\n{}", c);
+    println!("current_elx_fiq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -182,7 +178,7 @@ unsafe extern "C" fn current_elx_fiq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn current_elx_serror(c: &mut Context) {
-    println_sync!("current_elx_serror\n{}", c);
+    println!("current_elx_serror\n{}", c);
     loop {
         asm::wfe();
     }
@@ -190,7 +186,7 @@ unsafe extern "C" fn current_elx_serror(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_synchronous(c: &mut Context) {
-    println_sync!("lower_aarch64_synchronous\n{}", c);
+    println!("lower_aarch64_synchronous\n{}", c);
     loop {
         asm::wfe();
     }
@@ -198,7 +194,7 @@ unsafe extern "C" fn lower_aarch64_synchronous(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_irq(c: &mut Context) {
-    println_sync!("lower_aarch64_irq\n{}", c);
+    println!("lower_aarch64_irq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -206,7 +202,7 @@ unsafe extern "C" fn lower_aarch64_irq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_fiq(c: &mut Context) {
-    println_sync!("lower_aarch64_fiq\n{}", c);
+    println!("lower_aarch64_fiq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -214,7 +210,7 @@ unsafe extern "C" fn lower_aarch64_fiq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch64_serror(c: &mut Context) {
-    println_sync!("lower_aarch64_serror\n{}", c);
+    println!("lower_aarch64_serror\n{}", c);
     loop {
         asm::wfe();
     }
@@ -222,7 +218,7 @@ unsafe extern "C" fn lower_aarch64_serror(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch32_synchronous(c: &mut Context) {
-    println_sync!("lower_aarch32_synchronous\n{}", c);
+    println!("lower_aarch32_synchronous\n{}", c);
     loop {
         asm::wfe();
     }
@@ -230,7 +226,7 @@ unsafe extern "C" fn lower_aarch32_synchronous(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch32_irq(c: &mut Context) {
-    println_sync!("lower_aarch32_irq\n{}", c);
+    println!("lower_aarch32_irq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -238,7 +234,7 @@ unsafe extern "C" fn lower_aarch32_irq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch32_fiq(c: &mut Context) {
-    println_sync!("lower_aarch32_fiq\n{}", c);
+    println!("lower_aarch32_fiq\n{}", c);
     loop {
         asm::wfe();
     }
@@ -246,7 +242,7 @@ unsafe extern "C" fn lower_aarch32_fiq(c: &mut Context) {
 
 #[no_mangle]
 unsafe extern "C" fn lower_aarch32_serror(c: &mut Context) {
-    println_sync!("lower_aarch32_serror\n{}", c);
+    println!("lower_aarch32_serror\n{}", c);
     loop {
         asm::wfe();
     }

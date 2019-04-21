@@ -8,7 +8,6 @@ pub struct MiniUart {
     aux: *const AUX,
     gpio: *const GPIO,
     pub input: Option<VecDeque<u8>>,
-    pub output: Option<VecDeque<u8>>,
 }
 
 impl MiniUart { 
@@ -16,8 +15,7 @@ impl MiniUart {
         MiniUart {
             aux: AUX_BASE as *const AUX,
             gpio: GPIO_BASE as *const GPIO,
-            input: None,
-            output: None
+            input: None
         }
     }
     pub fn init(&self) {
@@ -136,6 +134,7 @@ impl MiniUart {
     }
     #[inline]
     pub fn try_read_char(&mut self) {
+        self.interrupt_disable();
         if self.input.is_none() {
             self.input = Some(VecDeque::with_capacity(255));
         }
@@ -146,19 +145,20 @@ impl MiniUart {
                 input_queue.push_back(c);
             }
         }
+        self.interrupt_enable();
     }
     #[inline]
-    pub fn try_write_char(&mut self) {
+    pub fn try_put_char(&mut self, c: char) -> bool {
         self.interrupt_disable();
         unsafe {
             if (*self.aux).AUX_MU_LSR_REG.is_set(AUX_MU_LSR_REG::TRANSMIT_EMPTY) {
-                critical_section! {
-                    let c = self.output.as_mut().unwrap().pop_front().unwrap();
-                    (*self.aux).AUX_MU_IO_REG.set(u32::from(c));
-                };
+                (*self.aux).AUX_MU_IO_REG.set(u32::from(c));
+                self.interrupt_enable();
+                return true;
             }
         }
         self.interrupt_enable();
+        false
     }
     pub fn try_get_char(&mut self) -> Option<char> {
         if let Some(c) = self.input.as_mut()?.pop_front() {
@@ -166,18 +166,8 @@ impl MiniUart {
         }
         None
     }
-    pub fn push_char(&mut self, c: char) {
-        if self.output.is_none() {
-            self.output = Some(VecDeque::with_capacity(255));
-        }
-        let output_queue = self.output.as_mut().unwrap();
-        output_queue.push_back(c as u8);
-    }
     pub fn character_available(&self) -> bool {
         self.input.is_some() && !self.input.as_ref().unwrap().is_empty()
-    }
-    pub fn output_empty(&mut self) -> bool {
-        self.output.is_none() || self.output.as_mut().unwrap().is_empty()
     }
 }
 

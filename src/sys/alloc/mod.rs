@@ -32,9 +32,9 @@ impl Allocator {
 unsafe impl GlobalAlloc for Allocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
         let alignment = layout.align();
-        let start = (self.next.get() + alignment - 1) & !(alignment - 1);;
+        let start = (self.next.get() + alignment - 1) & !(alignment - 1);
         let end = start + layout.size();
-        // println_sync!(
+        // println!(
         //     "[i] Allocated Addr {:#010X} Size {:#X}",
         //     start,
         //     layout.size()
@@ -48,7 +48,7 @@ unsafe impl GlobalAlloc for Allocator {
 
     unsafe fn dealloc(&self, _ptr: *mut u8, _layout: Layout) {
         // TODO: proper allocator
-        // println_sync!(
+        // println!(
         //     "[i] Deallocated Addr {:#010X} Size {:#X}",
         //     _ptr as usize,
         //     _layout.size()
