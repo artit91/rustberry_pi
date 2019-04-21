@@ -1,28 +1,6 @@
 use core::fmt;
 
 #[macro_export]
-macro_rules! critical_section {
-    {$($token:tt)*} => {{
-        global![interrupt].interrupt_disable();
-        $($token)*;
-        global![interrupt].interrupt_enable();
-    }};
-}
-
-#[macro_export]
-macro_rules! print_sync {
-    ($($arg:tt)*) => ($crate::macros::_print_sync(format_args!($($arg)*)));
-}
-
-#[macro_export]
-macro_rules! println_sync {
-    () => (print!("\n"));
-    ($($arg:tt)*) => ({
-        $crate::macros::_print_sync(format_args_nl!($($arg)*));
-    })
-}
-
-#[macro_export]
 macro_rules! print {
     ($($arg:tt)*) => ($crate::macros::_print(format_args!($($arg)*)));
 }
@@ -52,12 +30,6 @@ macro_rules! register_global {
 
 #[doc(hidden)]
 pub fn _print(args: fmt::Arguments) {
-    use core::fmt::Write;
-    global![logger].write_fmt(args).unwrap();
-}
-
-#[doc(hidden)]
-pub fn _print_sync(args: fmt::Arguments) {
     use core::fmt::Write;
     global![mini_uart].write_fmt(args).unwrap();
 }

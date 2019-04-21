@@ -15,7 +15,6 @@ mod macros;
 mod asm;
 mod dev;
 mod sys;
-mod logger;
 mod globals;
 
 use alloc::prelude::*;
@@ -30,7 +29,7 @@ static mut ALLOCATOR: Allocator = Allocator::new();
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     use crate::asm;
-    println_sync!("panic: {}", info);
+    println!("panic: {}", info);
     loop {
         asm::wfe();
     }
@@ -39,7 +38,7 @@ fn panic(info: &PanicInfo) -> ! {
 fn echo() {
     global![default_loop].read_char(Box::new(|c| {
         if c != '\n' {
-            print!("{}", c);
+            global![default_loop].put_char(c, Box::new(|| {}));
         }
         echo();
     }));
@@ -47,20 +46,17 @@ fn echo() {
 
 fn command_line() {
     global![default_loop].read_line(Box::new(|line| {
+        use core::fmt::Write;
         // echo back, for now
-        print!("\n{}\n> ", line);
-        command_line();
+        let mut s = String::new();
+        write!(s, "\n{}\n> ", line).unwrap();
+        global![default_loop].put_string(s, Box::new(command_line));
     }));
 }
 
 extern "C" fn _loop() -> ! {
     loop {
-        // check if we have to do something
         global![default_loop].run();
-        // set interrupt link
-        global![interrupt].link(_loop as *const u8 as u64);
-        // flush
-        global![default_loop].flush();
         asm::wfi();
     }
 }
@@ -71,11 +67,13 @@ extern "C" fn _main() -> ! {
 
     global![interrupt].interrupt_enable();
 
-    echo();
-    command_line();
-
-    println!("Welcome!");
-    print!("> ");
+    global![default_loop].put_string(
+        "Welcome!\n> ".to_string(),
+        Box::new(|| {
+            echo();
+            command_line();
+        }
+    ));
 
     _loop();
 }
