@@ -134,7 +134,6 @@ impl MiniUart {
     }
     #[inline]
     pub fn try_read_char(&mut self) {
-        self.interrupt_disable();
         if self.input.is_none() {
             self.input = Some(VecDeque::with_capacity(255));
         }
@@ -145,7 +144,6 @@ impl MiniUart {
                 input_queue.push_back(c);
             }
         }
-        self.interrupt_enable();
     }
     #[inline]
     pub fn try_put_char(&mut self, c: char) -> bool {
