@@ -54,13 +54,6 @@ fn command_line() {
     }));
 }
 
-extern "C" fn _loop() -> ! {
-    loop {
-        global![default_loop].run();
-        asm::wfi();
-    }
-}
-
 #[no_mangle]
 extern "C" fn _main() -> ! {
     globals::init();
@@ -75,5 +68,8 @@ extern "C" fn _main() -> ! {
         }
     ));
 
-    _loop();
+    loop {
+        global![default_loop].run();
+        asm::wfi();
+    }
 }
