@@ -55,18 +55,21 @@ impl Loop {
                 callback
             )
         });
+        self.dirty = true;
     }
     pub fn read_char(&mut self, callback: Box<dyn Fn(char)>) {
         self.id += 1;
         self.req.as_mut().unwrap().insert(self.id, Handle {
             op: Op::ReadChar(callback)
         });
+        self.dirty = true;
     }
     pub fn put_char(&mut self, c: char, callback: Box<dyn Fn()>) {
         self.id += 1;
         self.req.as_mut().unwrap().insert(self.id, Handle {
             op: Op::PutChar(c, callback)
         });
+        self.dirty = true;
     }
     pub fn put_string(&mut self, s: String, callback: Box<dyn Fn()>) {
         self.id += 1;
@@ -76,18 +79,15 @@ impl Loop {
                 callback
             )
         });
-    }
-    pub fn prepare(&mut self) {
         self.dirty = true;
     }
     pub fn is_dirty(&self) -> bool {
-        self.dirty
+        self.dirty || global![mini_uart].character_available()
     }
-    pub fn run(&mut self) {
+    pub fn run_inner(&mut self) {
         self.dirty = false;
+        let mut dirty = false;
         let character = global![mini_uart].try_get_char();
-        let mut pending = false;
-        let len = self.req.as_ref().unwrap().len();
         let called: Vec<u64> = self.req
             .as_ref()
             .unwrap()
@@ -123,7 +123,7 @@ impl Loop {
                             callback();
                             return Some(*id);
                         }
-                        pending = true;
+                        dirty = true;
                         None
                     },
                     Op::PutBuffer(buffer, callback) => {
@@ -140,18 +140,23 @@ impl Loop {
                                 return Some(*id);
                             }
                         }
-                        pending = true;
+                        dirty = true;
                         None
                     },
                 }
             })
             .collect();
-        let has_new = len != self.req.as_ref().unwrap().len();
+        if dirty {
+            self.dirty = true;
+        }
         for id in called {
             self.req.as_mut().unwrap().remove(&id);
         }
-        if has_new || pending || global![mini_uart].character_available() {
-            self.dirty = true;
-        }
+    }
+    pub fn run(&mut self) {
+        while {
+            self.run_inner();
+            self.is_dirty()
+        } {}
     }
 }
