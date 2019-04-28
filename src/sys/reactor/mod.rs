@@ -32,14 +32,16 @@ struct Handle {
 
 pub struct Loop {
     id: u64,
-    req: Option<BTreeMap<u64, Handle>>
+    req: Option<BTreeMap<u64, Handle>>,
+    dirty: bool
 }
 
 impl Loop {
     pub const fn new() -> Self {
         Loop {
             id: 0,
-            req: None
+            req: None,
+            dirty: false
         }
     }
     pub fn init(&mut self) {
@@ -75,7 +77,14 @@ impl Loop {
             )
         });
     }
+    pub fn prepare(&mut self) {
+        self.dirty = true;
+    }
+    pub fn is_dirty(&self) -> bool {
+        self.dirty
+    }
     pub fn run(&mut self) {
+        self.dirty = false;
         let character = global![mini_uart].try_get_char();
         let mut pending = false;
         let len = self.req.as_ref().unwrap().len();
@@ -137,12 +146,12 @@ impl Loop {
                 }
             })
             .collect();
-        let dirty = len != self.req.as_ref().unwrap().len();
+        let has_new = len != self.req.as_ref().unwrap().len();
         for id in called {
             self.req.as_mut().unwrap().remove(&id);
         }
-        if dirty || pending || global![mini_uart].character_available() {
-            self.run();
+        if has_new || pending || global![mini_uart].character_available() {
+            self.dirty = true;
         }
     }
 }

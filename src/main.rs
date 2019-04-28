@@ -69,7 +69,10 @@ extern "C" fn _main() -> ! {
     ));
 
     loop {
-        global![default_loop].run();
+        global![default_loop].prepare();
+        while global![default_loop].is_dirty() {
+            global![default_loop].run();
+        }
         asm::wfi();
     }
 }
